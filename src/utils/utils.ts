@@ -1,0 +1,18 @@
+
+// Weather condition to image mapping
+const weatherIcons: { [key: string]: string } = {
+    clear: "https://cdn-icons-png.flaticon.com/512/869/869869.png", // Clear sky icon
+    cloudy: "https://cdn-icons-png.flaticon.com/512/1163/1163657.png", // Partly cloudy icon
+    rain: "https://cdn-icons-png.flaticon.com/512/1163/1163627.png", // Rain icon
+    snow: "https://cdn-icons-png.flaticon.com/512/1163/1163666.png", // Snow icon
+    Thunderstorm: "https://cdn-icons-png.flaticon.com/512/1163/1163641.png", // Thunderstorm icon
+    Default: "https://cdn-icons-png.flaticon.com/512/869/869857.png", // Default weather icon
+};
+
+export const getWeatherIcon = (weatherCode: number) => {
+    if (weatherCode >= 0 && weatherCode <= 3) return weatherIcons['clear'];
+    if (weatherCode >= 45 && weatherCode <= 48) return weatherIcons['cloudy'];
+    if (weatherCode >= 51 && weatherCode <= 67) return weatherIcons['rain'];
+    if (weatherCode >= 71 && weatherCode <= 77) return weatherIcons['snow'];
+    return weatherIcons['default'];
+};
