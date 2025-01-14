@@ -6,6 +6,7 @@ import AuthenticatedRoute from './routing/AuthenticatedRoute';
 import Dashboard from './components/Dashboard/Dashboard';
 import Settings from './components/Settings/Settings';
 import PageNotFound from './components/SignIn/PageNotFound';
+import Social from './components/Social/Social';
 
 function App() {
 
@@ -18,6 +19,7 @@ function App() {
         <Route element={<AuthenticatedRoute />} >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path='/social' element={<Social />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>

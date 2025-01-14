@@ -89,7 +89,8 @@ const useAuthStore = create<AuthStoreState>()(
         signOut: () => set({ 
             user: null,
             token: null,
-            refreshToken: null
+            refreshToken: null,
+            loading: false
         }),
     }), {
         name: "auth-storage",
