@@ -52,7 +52,7 @@ export const StepPhoneNumber = ({ nextStep }: StepProps) => {
             <Input value={phoneNumber} maxLength={10} type="number"  {...register("phoneNumber", {
                 required: true,
                 pattern: {
-                    value: /^[0-9]{10}$/, // Adjust regex for your desired pattern
+                    value: /^[0-9]{10}$/,
                     message: "Enter a valid 10-digit phone number",
                 },
             })} onChange={handlePhoneNumberChange} />

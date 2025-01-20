@@ -5,12 +5,12 @@ import useDebounce from '../../hooks/debounce';
 import { Container, Box, Typography, CircularProgress, TextField, Autocomplete, Button } from '@mui/material';
 import { Title, Section, SectionTitle, WeatherIcon } from './Dashboard.styled';
 import { currentWeatherApiRequest, searchCityApiRequest } from '../../api/weather-api';
-import { getWeatherIcon } from '../../utils/utils';
+import { getCurrentLocation, getWeatherIcon } from '../../utils/utils';
 import { Favorites } from './Favorites';
 
 const DEFAULT_DEBOUNCE = 500
 
-interface WeatherData {
+export interface WeatherData {
     current: {
         time: Date;
         temperature2m: number;
@@ -68,24 +68,6 @@ const Dashboard: React.FC = () => {
     useDebounce(searchTerm, DEFAULT_DEBOUNCE, debouncedSearch);
 
     const { name } = user ?? { name: '' };
-
-    function getCurrentLocation(): Promise<{ lat: number; lon: number }> {
-        return new Promise((resolve, reject) => {
-            if (!navigator.geolocation) {
-                reject(new Error("Geolocation is not supported by your browser"));
-            } else {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const { latitude, longitude } = position.coords;
-                        resolve({ lat: latitude, lon: longitude });
-                    },
-                    (error) => {
-                        reject(new Error(`Geolocation error: ${error.message}`));
-                    }
-                );
-            }
-        });
-    }
 
     const getCurrentWeather = async (lat: number, lon: number) => {
         const response = await currentWeatherApiRequest(lat, lon);

@@ -16,3 +16,33 @@ export const getWeatherIcon = (weatherCode: number) => {
     if (weatherCode >= 71 && weatherCode <= 77) return weatherIcons['snow'];
     return weatherIcons['default'];
 };
+
+export function getCurrentLocation(): Promise<{ lat: number; lon: number }> {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error("Geolocation is not supported by your browser"));
+        } else {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    resolve({ lat: latitude, lon: longitude });
+                },
+                (error) => {
+                    reject(new Error(`Geolocation error: ${error.message}`));
+                }
+            );
+        }
+    });
+}
+
+export function validateTimeFormat(value:string) {
+    // Regular expression to match hh:mm:ss format
+    const timeFormatRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
+  
+    if (timeFormatRegex.test(value)) {
+      return true; // Valid format
+    } else {
+      return false; // Invalid format
+    }
+  }
+  
