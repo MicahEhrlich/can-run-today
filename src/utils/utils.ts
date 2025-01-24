@@ -6,7 +6,7 @@ const weatherIcons: { [key: string]: string } = {
     rain: "https://cdn-icons-png.flaticon.com/512/1163/1163627.png", // Rain icon
     snow: "https://cdn-icons-png.flaticon.com/512/1163/1163666.png", // Snow icon
     Thunderstorm: "https://cdn-icons-png.flaticon.com/512/1163/1163641.png", // Thunderstorm icon
-    Default: "https://cdn-icons-png.flaticon.com/512/869/869857.png", // Default weather icon
+    default: "https://cdn-icons-png.flaticon.com/512/869/869857.png", // Default weather icon
 };
 
 export const getWeatherIcon = (weatherCode: number) => {
@@ -46,3 +46,17 @@ export function validateTimeFormat(value:string) {
     }
   }
   
+  export function calculateRunningPace(distance: number, time: string) {
+    // Convert time to seconds
+    const timeArray = time.split(':').map(Number);
+    const timeInSeconds = timeArray[0] * 3600 + timeArray[1] * 60 + timeArray[2];
+  
+    // Calculate pace in seconds per meter
+    const pace = timeInSeconds / distance;
+  
+    // Convert pace to mm:ss format
+    const minutes = Math.floor(pace / 60);
+    const seconds = Math.round(pace % 60);
+  
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  }

@@ -18,6 +18,7 @@ const NewPostForm = styled.form`
     border-radius: 10px;
     margin-top: 10px;
     margin-bottom: 10px;
+    padding: 20px;
 `;
 
 const WeatherInfo = styled.div`
@@ -34,7 +35,6 @@ const RunningStats = styled.div`
     display: flex;
     justify-content: space-between;
   text-align: center;
-  margin: 20px 15px;
 
   h1 {
     font-size: 48px;
@@ -48,8 +48,8 @@ const RunningStatsInput = styled.input`
 
 const ActionButtons = styled.div`
   display: flex;
-  justify-content: space-around;
-  margin: 20px 0;
+  justify-content: space-between;
+  margin-top: 20px;
 `;
 
 const Button = styled.button`
@@ -77,6 +77,15 @@ const Button = styled.button`
     }
   }
 
+  &.disabled-post-btn {
+
+    background: #ccc;
+    cursor: not-allowed;
+    &:hover {
+      background: #ccc;
+    }
+  }
+
   &:hover {
     transform: scale(1.05);
   }
@@ -93,8 +102,8 @@ const PostContentWrapper = styled.div`
 
 const PostCard = styled.div`
   background:rgb(85, 82, 82);
-  padding: 10px;
-  margin-bottom: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.3s ease;
@@ -144,6 +153,13 @@ const Popup = styled.div`
     }
 `;
 
+const PopupRunningRow = styled.div`
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 10px;
+`;
+
 const PostActions = styled.div`
   margin-top: 10px;
   display: flex;
@@ -167,7 +183,7 @@ const PostDate = styled.div`
     font-family: ui-monospace;
 `;
 
-export const StyledForm = styled.form`
+const StyledForm = styled.form`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -179,25 +195,62 @@ export const StyledForm = styled.form`
   color: #333; /* Ensure text color is visible */
 `;
 
-export const ErrorMessage = styled.span`
+const ErrorMessage = styled.span`
     color: red;
     margin-bottom: 10px;
 `;
 
+const CommentStyling = styled.div`
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background-color: dimgray;
+  margin-bottom: 10px;
+  padding: 10px;
+`;
+
+const CommentDate = styled.div`
+  font-size: 12px;
+  font-family: ui-monospace;
+  display: flex;
+  justify-content: flex-end;
+`
+const CommentText = styled.div`
+  display: flex;
+  font-size: 12px;
+`
+
+const CommentUsername = styled(CommentText)`
+  font-weight: bold;
+  font-size: 14px;
+`
+
+const AddCommentArea = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
 
 export {
-    MainScreenWrapper,
-    WeatherInfo,
-    RunningStats,
-    ActionButtons,
-    Button,
-    SocialFeed,
-    PostContentWrapper,
-    PostCard,
-    UserInfo,
-    Popup,
-    PostActions,
-    PostDate,
-    NewPostForm,
-    RunningStatsInput
+  MainScreenWrapper,
+  WeatherInfo,
+  RunningStats,
+  ActionButtons,
+  Button,
+  SocialFeed,
+  PostContentWrapper,
+  PostCard,
+  UserInfo,
+  Popup,
+  PostActions,
+  PostDate,
+  NewPostForm,
+  RunningStatsInput,
+  PopupRunningRow,
+  StyledForm,
+  ErrorMessage,
+  CommentStyling,
+  CommentDate,
+  CommentText,
+  CommentUsername,
+  AddCommentArea
 };

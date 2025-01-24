@@ -50,3 +50,9 @@ export const WeatherIcon = styled.img`
     height: 30px;
     margin-right: 10px;
 `;
+
+export const WeatherSearchWrapper = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+`;

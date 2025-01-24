@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import useAuthStore from '../../store/authStore';
 import useDashboardStore, { FavoriteCity } from '../../store/dashboardStore';
 import useDebounce from '../../hooks/debounce';
+import { FaLocationDot } from "react-icons/fa6";
 import { Container, Box, Typography, CircularProgress, TextField, Autocomplete, Button } from '@mui/material';
-import { Title, Section, SectionTitle, WeatherIcon } from './Dashboard.styled';
+import { Title, Section, SectionTitle, WeatherIcon, WeatherSearchWrapper } from './Dashboard.styled';
 import { currentWeatherApiRequest, searchCityApiRequest } from '../../api/weather-api';
 import { getCurrentLocation, getWeatherIcon } from '../../utils/utils';
 import { Favorites } from './Favorites';
@@ -46,6 +47,7 @@ const Dashboard: React.FC = () => {
     const addFavoriteCity = useDashboardStore((state) => state.addCity);
     const cityExists = useDashboardStore((state) => state.findCity);
 
+    const [currentCity, setCurrentCity] = useState<string>('');
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<CitySearchResult[]>([]);
@@ -98,6 +100,7 @@ const Dashboard: React.FC = () => {
             const selectedCity = searchResults.find((result) => result.id === value.id);
             if (selectedCity) {
                 getCurrentWeather(selectedCity.latitude, selectedCity.longitude);
+                setCurrentCity(selectedCity.name);
             }
         }
     };
@@ -120,46 +123,56 @@ const Dashboard: React.FC = () => {
 
     const handleFavoriteCityClick = (city: FavoriteCity) => {
         getCurrentWeather(city.latitude, city.longitude);
+        setCurrentCity(city.name);
     };
 
-    useEffect(() => {
+    const getCurrentLocationWeather = useCallback(() => {
         getCurrentLocation()
             .then(async (location) => {
                 getCurrentWeather(location.lat, location.lon);
+                setCurrentCity('Current Weather');
             })
             .catch((error) => {
                 console.error(error.message);
             });
     }, []);
 
+    useEffect(() => {
+        getCurrentLocationWeather()
+    }, [getCurrentLocationWeather]);
+
     return (
         <Container>
             <Title>Dashboard</Title>
             <Typography>Welcome {name} to the dashboard!</Typography>
-            <Autocomplete
-                freeSolo={false}
-                options={searchResults ?? []}
-                getOptionLabel={(option) => `${option.name}, ${option.admin1}, ${option.country}`}
-                getOptionKey={(option) => option.id}
-                inputValue={searchTerm}
-                onInputChange={(event, newInputValue) => {
-                    setSearchTerm(newInputValue);
-                }}
-                onChange={handleOptionSelect}
-                renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        label="Search"
-                        variant="outlined"
-                        fullWidth
-                        margin="normal"
-                        sx={{
-                            '& .MuiOutlinedInput-root': { color: 'white' },
-                            '& .MuiInputLabel-root': { color: 'white' }
-                        }}
-                    />
-                )}
-            />
+            <WeatherSearchWrapper>
+                <Autocomplete
+                    freeSolo={false}
+                    options={searchResults ?? []}
+                    getOptionLabel={(option) => `${option.name}, ${option.admin1}, ${option.country}`}
+                    getOptionKey={(option) => option.id}
+                    inputValue={searchTerm}
+                    onInputChange={(event, newInputValue) => {
+                        setSearchTerm(newInputValue);
+                    }}
+                    onChange={handleOptionSelect}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Search"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            sx={{
+                                width: 350,
+                                '& .MuiOutlinedInput-root': { color: 'white' },
+                                '& .MuiInputLabel-root': { color: 'white' }
+                            }}
+                        />
+                    )}
+                />
+                <Button color="primary" onClick={getCurrentLocationWeather}><FaLocationDot/></Button>
+            </WeatherSearchWrapper>
             {selectedCity && !cityExists(selectedCity.id) && (
                 <Button variant="contained" color="primary" onClick={handleAddToFavorites}>
                     Add to Favorites
@@ -168,7 +181,7 @@ const Dashboard: React.FC = () => {
 
             {weatherData ? (
                 <Section>
-                    <SectionTitle>Current Weather</SectionTitle>
+                    <SectionTitle>{currentCity}</SectionTitle>
                     <WeatherIcon
                         src={getWeatherIcon(weatherData.current.weatherCode)}
                         alt="Weather Icon"
