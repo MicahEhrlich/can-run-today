@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import useAuthStore from '../../store/authStore';
 import useDashboardStore, { FavoriteCity } from '../../store/dashboardStore';
 import useDebounce from '../../hooks/debounce';
@@ -94,13 +94,19 @@ const Dashboard: React.FC = () => {
         }
     }
 
+    const prevCoords = useRef<{ latitude: number; longitude: number } | null>(null);
+
     const handleOptionSelect = (event: React.SyntheticEvent, value: CitySearchResult | null) => {
         if (value) {
             setSelectedCity(value);
             const selectedCity = searchResults.find((result) => result.id === value.id);
             if (selectedCity) {
-                getCurrentWeather(selectedCity.latitude, selectedCity.longitude);
-                setCurrentCity(selectedCity.name);
+                const { latitude, longitude } = selectedCity;
+                if (!prevCoords.current || prevCoords.current.latitude !== latitude || prevCoords.current.longitude !== longitude) {
+                    getCurrentWeather(latitude, longitude);
+                    setCurrentCity(selectedCity.name);
+                    prevCoords.current = { latitude, longitude }
+                }    
             }
         }
     };
@@ -141,6 +147,13 @@ const Dashboard: React.FC = () => {
         getCurrentLocationWeather()
     }, [getCurrentLocationWeather]);
 
+    {/* Add the following code snippet to the Dashboard component 
+     
+     When adding new posts we can save the running stats to the user's profile.
+     Then we can have a section in the dashboard that displays the user's running stats, and running history.
+     
+     
+     */}
     return (
         <Container>
             <Title>Dashboard</Title>

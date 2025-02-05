@@ -310,40 +310,6 @@ const Social = () => {
                         </PostCard>
                     )
                 }
-                {/* <PostCard>
-
-                    <UserInfo>
-                        <img src="profile-pic.png" alt="User" />
-                        <span>@user1</span>
-                    </UserInfo>
-                    <p>"Morning jog done! 🌅"</p>
-                    <PostActions>
-                        <button>
-                            <FaHeart /> 20
-                        </button>
-                        <button>
-                            <FaComment /> Comment
-                        </button>
-                    </PostActions>
-                </PostCard>
-                <PostCard>
-                    <UserInfo>
-                        <img src="profile-pic.png" alt="User" />
-                        <span>@user1</span>
-                    </UserInfo>
-                    <p>"Morning jog done! 🌅"</p>
-                    <PostDate>
-                        <span>{new Date().toLocaleString()}</span>
-                    </PostDate>
-                    <PostActions>
-                        <button>
-                            <FaHeart /> 20
-                        </button>
-                        <button>
-                            <FaComment /> Comment
-                        </button>
-                    </PostActions>
-                </PostCard> */}
             </SocialFeed>
         </MainScreenWrapper>
     );
