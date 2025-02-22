@@ -1,26 +1,28 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
-import { AppBar, Toolbar, Button, Box } from '@mui/material';
+import { AppBar, Button, Box } from '@mui/material';
 import useDashboardStore from '../../store/dashboardStore';
+import { useSocialStore } from '../../store/socialStore';
+import { BiLogOut } from "react-icons/bi";
+import { StyledToolbar } from './Navbar.styled';
 
 const Navbar: React.FC = () => {
     const signOut = useAuthStore((state) => state.signOut);
     const clearCities = useDashboardStore((state) => state.clear);
+    const clearPosts = useSocialStore((state) => state.clear);
     const navigate = useNavigate();
 
     const handleSignOut = () => {
         clearCities();
+        clearPosts()
         signOut();
         navigate('/signIn');
     };
 
     return (
-        <AppBar position="static">
-            <Toolbar>
-                {/* <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                    Can I Run Today?
-                </Typography> */}
+        <AppBar position="fixed">
+            <StyledToolbar>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                     <Button color="inherit" onClick={() => navigate('/dashboard')}>
                         Dashboard
@@ -31,11 +33,14 @@ const Navbar: React.FC = () => {
                     <Button color="inherit" onClick={() => navigate('/settings')}>
                         Settings
                     </Button>
-                    <Button color="inherit" onClick={handleSignOut}>
-                        Sign Out
-                    </Button>
                 </Box>
-            </Toolbar>
+                <Box sx={{  cursor: 'pointer' }}>
+                    <div onClick={handleSignOut} style={{ display: 'flex', gap: 15, alignItems: 'baseline' }}>
+                        Sign out
+                        <BiLogOut />
+                    </div>
+                </Box>
+            </StyledToolbar>
         </AppBar>
     );
 };

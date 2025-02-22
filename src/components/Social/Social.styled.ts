@@ -6,7 +6,6 @@ const MainScreenWrapper = styled.div`
   font-family: 'Roboto', sans-serif;
   padding: 20px;
   background: linear-gradient(180deg,rgb(34, 33, 33),rgb(65, 59, 59));
-  min-height: 100vh;
 
   @media (max-width: 768px) {
     padding: 10px;
@@ -91,7 +90,6 @@ const Button = styled.button`
   }
 `;
 const SocialFeed = styled.div`
-  padding: 10px 20px;
   overflow-y: auto;
   max-height: 300px;
 `;
@@ -115,6 +113,16 @@ const PostCard = styled.div`
   @media (max-width: 768px) {
     padding: 5px;
   }
+`;
+
+const TextArea = styled.textarea`
+  resize: none;
+`;
+
+const RunningStatsRow = styled.div`
+  display: flex;
+  flex-direction: column;
+  text-align: left;
 `;
 
 const UserInfo = styled.div`
@@ -252,5 +260,7 @@ export {
   CommentDate,
   CommentText,
   CommentUsername,
-  AddCommentArea
+  AddCommentArea,
+  TextArea,
+  RunningStatsRow
 };

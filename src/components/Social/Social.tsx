@@ -15,10 +15,13 @@ import {
     CommentDate,
     CommentText,
     CommentUsername,
-    AddCommentArea
+    AddCommentArea,
+    TextArea,
+    RunningStatsRow
 } from './Social.styled';
 import useAuthStore from '../../store/authStore';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { Post, PostComment, useSocialStore } from '../../store/socialStore';
 
 const POST_MAX_LENGTH = 200;
 const POST_MIN_LENGTH = 3;
@@ -32,24 +35,6 @@ interface FormFields {
     distance: number;
     duration: string;
     text: string;
-}
-
-interface Post {
-    username: string;
-    name: string;
-    city?: string;
-    text: string;
-    distance: number;
-    duration: string;
-    likes: number;
-    comments?: PostComment[];
-    date: Date;
-}
-
-interface PostComment {
-    username: string;
-    text: string;
-    date: Date;
 }
 
 
@@ -70,16 +55,19 @@ const Comment: React.FC<CommentProps> = ({ username, text, date }) => {
 }
 
 const PostTextarea: React.FC<PostTextareaProps> = forwardRef(({ maxLength, minLength, ...props }, ref) => {
-    return <textarea {...props} maxLength={maxLength} minLength={minLength} ref={ref} />;
+    const forwardRef = ref as React.RefObject<HTMLTextAreaElement>;
+    return <TextArea {...props} maxLength={maxLength} minLength={minLength} ref={forwardRef} />;
 });
 
 const Social = () => {
     const user = useAuthStore((state) => state.user);
+    const posts = useSocialStore((state) => state.posts);
+    const addPost = useSocialStore((state) => state.addPost);
+    const addComment = useSocialStore((state) => state.addComment);
     const [distance, setDistance] = useState<number>(0.1);
     const [duration, setDuration] = useState<string>('');
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
     const [postContent, setPostContent] = useState<string>('');
-    const [posts, setPosts] = useState<Post[]>([]);
     const [commentInput, setCommentInput] = useState<{ [key: number]: string }>({});
     const [showUserInfo, setShowUserInfo] = useState<boolean>(false);
     const [showComments, setShowComments] = useState<boolean>(false);
@@ -95,24 +83,21 @@ const Social = () => {
     };
 
     const addCommentDisabled = (postIndex: number) => {
-        if (!commentInput[postIndex]) { 
+        if (!commentInput[postIndex]) {
             return true;
         } else {
             return false;
         }
     }
 
-    const addComment = (postIndex: number) => {
+    const addNewComment = (postIndex: number) => {
         const newComment: PostComment = {
             username: user?.email ?? 'Anonymous',
             text: commentInput[postIndex] || '',
             date: new Date(),
         };
 
-        const updatedPosts = [...posts];
-        updatedPosts[postIndex].comments?.push(newComment);
-
-        setCommentInput((prev) => ({ ...prev, [postIndex]: '' }));
+        addComment(posts[postIndex].id, newComment);
     };
 
     const handleDistanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,8 +114,8 @@ const Social = () => {
 
     //TODO: all this should be saves in store => evnetually will be saved in DB
     const addNewPost = () => {
-        const updatedPosts = [...posts];
         const newPost: Post = {
+            id: `id-${Date.now()}`,
             username: user?.email ?? ' ',
             name: user?.name ?? ' ',
             city: user?.city ?? ' ',
@@ -141,9 +126,7 @@ const Social = () => {
             comments: [],
             date: new Date()
         };
-
-        updatedPosts.push(newPost);
-        setPosts(updatedPosts);
+        addPost(newPost);
         resetPost();
     }
 
@@ -205,7 +188,6 @@ const Social = () => {
 
     return (
         <MainScreenWrapper>
-            {/* Weather Info */}
             <WeatherInfo>
                 <span>{weatherData?.current.temperature2m.toFixed(0)}°C</span>
                 {weatherData?.current.weatherCode && <WeatherIcon
@@ -214,28 +196,32 @@ const Social = () => {
                 />}
                 <span>Current Location</span>
             </WeatherInfo>
-
             <NewPostForm onSubmit={handleSubmit(onSubmit)}>
                 <RunningStats>
-                    <label>Distance:
-                        <RunningStatsInput type="number" value={distance} step="0.1" placeholder="Distance (km)"
-                            {...register("distance", { required: true, min: 0.1 })} onChange={handleDistanceChange} />
-                    </label>
-                    <label>Duration:
-                        <RunningStatsInput type="string" value={duration} placeholder="hh:mm:ss"
-                            {...register("duration", {
-                                required: true,
-                                pattern: {
-                                    value: /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/, // hh:mm:ss
-                                    message: "Enter duration in the following format: hh:mm:ss"
-                                }
-                            })}
-                            onChange={handleDurationChange} />
-                    </label>
+                    <RunningStatsRow>
+                        <label>Distance:
+                            <RunningStatsInput type="number" value={distance} step="0.1" placeholder="km"
+                                {...register("distance", { required: true, min: 0.1 })} onChange={handleDistanceChange} />
+                        </label>
+                        {!distance && distance <= 0 && <ErrorMessage>Distance has to be greater than 0</ErrorMessage>}
+                        {errors.distance && !distance && <ErrorMessage>Distance is required</ErrorMessage>}
+                    </RunningStatsRow>
+                    <RunningStatsRow>
+                        <label>Duration:
+                            <RunningStatsInput type="string" value={duration} placeholder="hh:mm:ss"
+                                {...register("duration", {
+                                    required: true,
+                                    pattern: {
+                                        value: /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/, // hh:mm:ss
+                                        message: "Enter duration in the following format: hh:mm:ss"
+                                    }
+                                })}
+                                onChange={handleDurationChange} />
+                        </label>
+                        {errors.duration && !duration.length && <ErrorMessage>Duration is required</ErrorMessage>}
+                        {errors.duration?.message && <ErrorMessage>{errors.duration?.message}</ErrorMessage>}
+                    </RunningStatsRow>
                 </RunningStats>
-                {!distance && distance <= 0 && <ErrorMessage>Distance has to be greater than 0</ErrorMessage>}
-                {errors.duration && !duration.length && <ErrorMessage>Duration is required</ErrorMessage>}
-                {errors.duration?.message && <ErrorMessage>{errors.duration?.message}</ErrorMessage>}
                 <RunningStats><label>Pace: {calculatePace()}</label></RunningStats>
 
                 <PostContentWrapper>
@@ -245,7 +231,7 @@ const Social = () => {
                         onChange={handlePostContentChange}
                         placeholder="What's on your mind?"
                         rows={4}
-                        cols={60}
+                        cols={32}
                         maxLength={POST_MAX_LENGTH}
                         minLength={POST_MIN_LENGTH}
                     />
@@ -293,7 +279,7 @@ const Social = () => {
 
                                 {/* Add Comment Input */}
                                 <AddCommentArea>
-                                    <textarea
+                                    <TextArea
                                         value={commentInput[index] || ''}
                                         placeholder="Add a comment..."
                                         rows={4}
@@ -303,7 +289,7 @@ const Social = () => {
                                         onChange={(e) => handleCommentChange(index, e.target.value)}
                                     />
                                     <ActionButtons>
-                                    <Button className={addCommentDisabled(index) ? `disabled-post-btn`: `post-run-btn`} disabled={addCommentDisabled(index)} onClick={() => addComment(index)}>Post</Button>
+                                        <Button className={addCommentDisabled(index) ? `disabled-post-btn` : `post-run-btn`} disabled={addCommentDisabled(index)} onClick={() => addNewComment(index)}>Post</Button>
                                     </ActionButtons>
                                 </AddCommentArea>
                             </>}

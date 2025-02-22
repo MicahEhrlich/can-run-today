@@ -103,6 +103,10 @@ axiosInstance.interceptors.response.use(
                     });
             });
         }
+        if (error?.code == "ERR_NETWORK") {
+            useAuthStore.getState().signOut();
+            useDashboardStore.getState().clear();
+        }
         setLoading(false);
         return Promise.reject(error);
     }
