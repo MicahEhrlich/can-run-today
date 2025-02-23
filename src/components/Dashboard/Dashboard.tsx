@@ -1,15 +1,20 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
+import {
+    useQuery,
+} from '@tanstack/react-query';
 import useAuthStore from '../../store/authStore';
 import useDashboardStore, { FavoriteCity } from '../../store/dashboardStore';
 import useDebounce from '../../hooks/debounce';
 import { FaLocationDot } from "react-icons/fa6";
-import { Container, Box, Typography, CircularProgress, TextField, Autocomplete, Button } from '@mui/material';
-import { Title, Section, SectionTitle, WeatherIcon, WeatherSearchWrapper } from './Dashboard.styled';
+import { Container, Box, Typography, CircularProgress, TextField, Autocomplete, Button, Alert } from '@mui/material';
+import { Title, WeatherSearchWrapper } from './Dashboard.styled';
 import { currentWeatherApiRequest, searchCityApiRequest } from '../../api/weather-api';
-import { getCurrentLocation, getWeatherIcon } from '../../utils/utils';
+import { getCurrentLocation } from '../../utils/utils';
 import { Favorites } from './Favorites';
+import { WeatherDisplay } from './WeatherDisplay';
 
 const DEFAULT_DEBOUNCE = 500
+const CURRENT_WEATHER = 'Current Weather'
 
 export interface WeatherData {
     current: {
@@ -41,17 +46,21 @@ export interface CitySearchResult {
     postcodes?: string[];
 }
 
+const MAX_CITIES = 5;
 
 const Dashboard: React.FC = () => {
     const user = useAuthStore((state) => state.user);
     const addFavoriteCity = useDashboardStore((state) => state.addCity);
     const cityExists = useDashboardStore((state) => state.findCity);
+    const favoriteCities = useDashboardStore((state) => state.favoriteCities);
 
     const [currentCity, setCurrentCity] = useState<string>('');
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<CitySearchResult[]>([]);
     const [selectedCity, setSelectedCity] = useState<CitySearchResult | null>(null);
+    const [alertMessage, setAlertMessage] = useState<string | null>(null);
+    const [alertSeverity, setAlertSeverity] = useState<'success' | 'error'>('success');
 
     const handleDebouncedSearch = async (debouncedValue: string) => {
         try {
@@ -106,13 +115,17 @@ const Dashboard: React.FC = () => {
                     getCurrentWeather(latitude, longitude);
                     setCurrentCity(selectedCity.name);
                     prevCoords.current = { latitude, longitude }
-                }    
+                }
             }
         }
     };
 
     const handleAddToFavorites = () => {
-        if (selectedCity) {
+        if (favoriteCities.length === MAX_CITIES) {
+            setAlertMessage('Reached maximum number of favorite cities');
+            setAlertSeverity('error');
+        }
+        else if (selectedCity) {
             const favoriteCity: FavoriteCity = {
                 id: selectedCity.id,
                 name: selectedCity.name,
@@ -132,20 +145,54 @@ const Dashboard: React.FC = () => {
         setCurrentCity(city.name);
     };
 
-    const getCurrentLocationWeather = useCallback(() => {
+    const getCurrentLocationWeather = () => {
         getCurrentLocation()
             .then(async (location) => {
                 getCurrentWeather(location.lat, location.lon);
-                setCurrentCity('Current Weather');
+                setCurrentCity(CURRENT_WEATHER);
             })
             .catch((error) => {
                 console.error(error.message);
             });
-    }, []);
+    };
 
-    useEffect(() => {
-        getCurrentLocationWeather()
-    }, [getCurrentLocationWeather]);
+
+    const { isPending, isFetching, error, data } = useQuery({
+        queryKey: ['weatherData'],
+        queryFn: async () => {
+            return getCurrentLocation()
+                .then(async (location) => {
+                    setCurrentCity(CURRENT_WEATHER);
+                    let weatherData;
+                    const response = await currentWeatherApiRequest(location.lat, location.lon);
+                    if (response.success && response.data) {
+                        const parsedResponse = response.data[0];
+                        const utcOffsetSeconds = parsedResponse.utcOffsetSeconds();
+                        const current = parsedResponse.current()!;
+                        weatherData = {
+                            current: {
+                                time: new Date((Number(current.time()) + utcOffsetSeconds) * 1000),
+                                temperature2m: current.variables(0)!.value(),
+                                isDay: current.variables(1)!.value(),
+                                precipitation: current.variables(2)!.value(),
+                                rain: current.variables(3)!.value(),
+                                showers: current.variables(4)!.value(),
+                                weatherCode: current.variables(5)!.value(),
+                                windSpeed10m: current.variables(6)!.value(),
+                            },
+
+                        };
+                    }
+                    return weatherData;
+
+                })
+                .catch((error) => {
+                    console.error(error.message);
+                    return null;
+                });
+
+        }
+    })
 
     {/* Add the following code snippet to the Dashboard component 
      
@@ -154,6 +201,7 @@ const Dashboard: React.FC = () => {
      
      
      */}
+
     return (
         <Container>
             <Title>Dashboard</Title>
@@ -184,38 +232,29 @@ const Dashboard: React.FC = () => {
                         />
                     )}
                 />
-                <Button color="primary" onClick={getCurrentLocationWeather}><FaLocationDot/></Button>
+                <Button color="primary" onClick={getCurrentLocationWeather}><FaLocationDot /></Button>
             </WeatherSearchWrapper>
             {selectedCity && !cityExists(selectedCity.id) && (
                 <Button variant="contained" color="primary" onClick={handleAddToFavorites}>
                     Add to Favorites
                 </Button>
             )}
-
-            {weatherData ? (
-                <Section>
-                    <SectionTitle>{currentCity}</SectionTitle>
-                    <WeatherIcon
-                        src={getWeatherIcon(weatherData.current.weatherCode)}
-                        alt="Weather Icon"
-                    />
-                    <Typography variant="h2">{weatherData.current.temperature2m.toFixed(0)}°C</Typography>
-                    <Box className="current-weather" sx={{ mt: 2 }}>
-                        <Typography variant="body1">{new Date(Number(weatherData.current.time)).toDateString()}</Typography>
-                        <Typography variant="body1">Temperature: {weatherData.current.temperature2m.toFixed(0)}°C</Typography>
-                        <Typography variant="body1">Is Day: {weatherData.current.isDay ? 'Yes' : 'No'}</Typography>
-                        <Typography variant="body1">Precipitation: {weatherData.current.precipitation.toFixed(0)} mm</Typography>
-                        <Typography variant="body1">Rain: {weatherData.current.rain.toFixed(0)} mm</Typography>
-                        <Typography variant="body1">Showers: {weatherData.current.showers.toFixed(0)} mm</Typography>
-                        <Typography variant="body1">Wind Speed: {weatherData.current.windSpeed10m.toFixed(2)} m/s</Typography>
-
-                    </Box>
-                </Section>
-            ) : (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                    <CircularProgress />
+            {alertMessage && (
+                <Box sx={{ mt: 2 }}>
+                    <Alert severity={alertSeverity} onClose={() => setAlertMessage(null)}>
+                        {alertMessage}
+                    </Alert>
                 </Box>
             )}
+            {error && <h2>An error has occured</h2>}
+            {isFetching ? (<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 4 }}>
+                {isPending ? <h2>Loading Weather from API...</h2> : <h2>Loading Weather...</h2>}
+                <CircularProgress />
+            </Box>) :
+                data && currentCity == CURRENT_WEATHER ?
+                    <WeatherDisplay weatherData={data} currentCity={currentCity} /> :
+                    (weatherData && <WeatherDisplay weatherData={weatherData} currentCity={currentCity} />)
+            }
             <Favorites handleFavoriteCityClick={handleFavoriteCityClick} />
         </Container>
     );

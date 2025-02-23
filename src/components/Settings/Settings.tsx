@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Container, Typography, Paper, Checkbox, FormControlLabel, Box, CircularProgress, TextField, Button, Alert } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { getUserDetails, updateUserDetails } from '../../api/authenticated-api';
 import useSettingsStore, { UserSettings } from '../../store/settingsStore';
 import useAuthStore from '../../store/authStore';
+import { useQuery } from '@tanstack/react-query';
 
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -76,9 +77,9 @@ const Settings: React.FC = () => {
         }
     };
 
-
-    useEffect(() => {
-        const fetchData = async () => {
+    const { isFetching, error } = useQuery({
+        queryKey: ['userSettings'],
+        queryFn: async () => {
             try {
                 const response = await getUserDetails();
                 if (response.success && response.data) {
@@ -87,6 +88,9 @@ const Settings: React.FC = () => {
                     if (userSettings.weekDaysRunning) {
                         setWeekDaysRunning(userSettings.weekDaysRunning.toString().split('').map(Number));
                     }
+                    return userSettings;
+                } else {
+                    return new Error('Failed to get user settings');
                 }
             } catch (error) {
                 if (error instanceof Error) {
@@ -94,18 +98,22 @@ const Settings: React.FC = () => {
                 } else {
                     console.error(error);
                 }
+                return error;
             }
+        }
+    })
 
-        };
-        fetchData();
-    }, [setUserSettings]);
+    if (error) {
+        setAlertMessage('Failed to load settings');
+        setAlertSeverity('error');
+    }
 
     return (
         <Container maxWidth="md" sx={{ mt: 4 }}>
             <Typography variant="h4" gutterBottom>
                 User Settings
             </Typography>
-            {userSettings ? (<Paper elevation={3} sx={{ p: 3 }}>
+            {userSettings && (<Paper elevation={3} sx={{ p: 3 }}>
                 <Grid container spacing={2}>
                     <Grid item xs={12}>
                         <Typography variant="h6" gutterBottom>
@@ -285,8 +293,9 @@ const Settings: React.FC = () => {
                         )}
                     </Grid>
                 </Grid>
-            </Paper>) :
-                (<Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            </Paper>)}
+            {isFetching && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                     <CircularProgress />
                 </Box>)}
             {alertMessage && (

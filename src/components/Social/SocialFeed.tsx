@@ -35,7 +35,7 @@ const Comment: React.FC<CommentProps> = ({ username, text, date }) => {
 
 export const SocialFeed = ({ posts, user }: SocialFeedProps) => {
     const addComment = useSocialStore((state) => state.addComment);
-    
+
     const [showUserInfo, setShowUserInfo] = useState<boolean>(false);
     const [showComments, setShowComments] = useState<boolean>(false);
     const [commentInput, setCommentInput] = useState<{ [key: number]: string }>({});
@@ -60,6 +60,7 @@ export const SocialFeed = ({ posts, user }: SocialFeedProps) => {
         };
 
         addComment(posts[postIndex].id, newComment);
+        setCommentInput((prev) => ({ ...prev, [postIndex]: '' }));
     };
 
     const handleUserInfoHover = () => {
@@ -71,15 +72,15 @@ export const SocialFeed = ({ posts, user }: SocialFeedProps) => {
             {
                 posts.map((post: Post, index: number) =>
                     <PostCard key={index}>
+                        {showUserInfo && <Popup>
+                            <label>{post.username}</label>
+                            <label>{post.city ?? 'N/A'}</label>
+                            <label>{post.name ?? 'N/A'}</label>
+                            <PopupRunningRow><FaRunning /> {post.distance}Km <LuTimer /> {post.duration} <IoMdSpeedometer /> {calculateRunningPace(post.distance, post.duration)}</PopupRunningRow>
+                        </Popup>}
                         <UserInfo onMouseEnter={handleUserInfoHover} onMouseLeave={handleUserInfoHover}>
                             <img src="profile-pic.png" alt="User" />
                             <span>{post.username}</span>
-                            {showUserInfo && <Popup>
-                                <label>{post.username}</label>
-                                <label>{post.city ?? 'N/A'}</label>
-                                <label>{post.name ?? 'N/A'}</label>
-                                <PopupRunningRow><FaRunning /> {post.distance}Km <LuTimer /> {post.duration} <IoMdSpeedometer /> {calculateRunningPace(post.distance, post.duration)}</PopupRunningRow>
-                            </Popup>}
                         </UserInfo>
                         <p>{post.text}</p>
                         <PostDate>
@@ -99,7 +100,6 @@ export const SocialFeed = ({ posts, user }: SocialFeedProps) => {
                                 <Comment key={commentIndex} username={comment.username} text={comment.text} date={comment.date} />
                             )}
 
-                            {/* Add Comment Input */}
                             <AddCommentArea>
                                 <TextArea
                                     value={commentInput[index] || ''}

@@ -1,27 +1,19 @@
 import React, { forwardRef, useCallback, useEffect, useState } from 'react';
-import { FaHeart, FaComment, FaRunning } from 'react-icons/fa';
-import { LuTimer } from "react-icons/lu";
-import { IoMdSpeedometer } from "react-icons/io";
 import { TextareaHTMLAttributes } from 'react';
 import { currentWeatherApiRequest } from '../../api/weather-api';
 import { WeatherData } from '../Dashboard/Dashboard';
 import { WeatherIcon } from '../Dashboard/Dashboard.styled';
 import { calculateRunningPace, getCurrentLocation, getWeatherIcon } from '../../utils/utils';
 import {
-    MainScreenWrapper, WeatherInfo, RunningStats, PostContentWrapper, ActionButtons, SocialFeed, PostCard, UserInfo, PostActions, Button,
-    PostDate, Popup, RunningStatsInput, ErrorMessage, NewPostForm,
-    PopupRunningRow,
-    CommentStyling,
-    CommentDate,
-    CommentText,
-    CommentUsername,
-    AddCommentArea,
+    MainScreenWrapper, WeatherInfo, RunningStats, PostContentWrapper, ActionButtons, Button,
+    RunningStatsInput, ErrorMessage, NewPostForm,
     TextArea,
     RunningStatsRow
 } from './Social.styled';
 import useAuthStore from '../../store/authStore';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { Post, PostComment, useSocialStore } from '../../store/socialStore';
+import { Post, useSocialStore } from '../../store/socialStore';
+import { SocialFeed } from './SocialFeed';
 
 const POST_MAX_LENGTH = 200;
 const POST_MIN_LENGTH = 3;
@@ -37,23 +29,6 @@ interface FormFields {
     text: string;
 }
 
-
-interface CommentProps {
-    username: string;
-    text: string;
-    date: Date;
-}
-
-const Comment: React.FC<CommentProps> = ({ username, text, date }) => {
-    return (
-        <CommentStyling>
-            <CommentUsername>{username}</CommentUsername>
-            <CommentText>{text}</CommentText>
-            <CommentDate>{date.toLocaleString()}</CommentDate>
-        </CommentStyling>
-    )
-}
-
 const PostTextarea: React.FC<PostTextareaProps> = forwardRef(({ maxLength, minLength, ...props }, ref) => {
     const forwardRef = ref as React.RefObject<HTMLTextAreaElement>;
     return <TextArea {...props} maxLength={maxLength} minLength={minLength} ref={forwardRef} />;
@@ -63,42 +38,16 @@ const Social = () => {
     const user = useAuthStore((state) => state.user);
     const posts = useSocialStore((state) => state.posts);
     const addPost = useSocialStore((state) => state.addPost);
-    const addComment = useSocialStore((state) => state.addComment);
     const [distance, setDistance] = useState<number>(0.1);
     const [duration, setDuration] = useState<string>('');
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
     const [postContent, setPostContent] = useState<string>('');
-    const [commentInput, setCommentInput] = useState<{ [key: number]: string }>({});
-    const [showUserInfo, setShowUserInfo] = useState<boolean>(false);
-    const [showComments, setShowComments] = useState<boolean>(false);
 
     const {
         register,
         handleSubmit,
         formState: { errors },
     } = useForm<FormFields>()
-
-    const handleCommentChange = (postIndex: number, text: string) => {
-        setCommentInput((prev) => ({ ...prev, [postIndex]: text }));
-    };
-
-    const addCommentDisabled = (postIndex: number) => {
-        if (!commentInput[postIndex]) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    const addNewComment = (postIndex: number) => {
-        const newComment: PostComment = {
-            username: user?.email ?? 'Anonymous',
-            text: commentInput[postIndex] || '',
-            date: new Date(),
-        };
-
-        addComment(posts[postIndex].id, newComment);
-    };
 
     const handleDistanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setDistance(parseFloat(e.target.value));
@@ -163,10 +112,6 @@ const Social = () => {
         if (!distance || !duration || distance <= 0) return 'N/A';
         return calculateRunningPace(distance, duration);
     }, [distance, duration]);
-
-    const handleUserInfoHover = () => {
-        setShowUserInfo(!showUserInfo)
-    }
 
     const onSubmit: SubmitHandler<FormFields> = () => {
         addNewPost()
@@ -242,61 +187,7 @@ const Social = () => {
                     <Button className="reset-post-btn" onClick={resetPost}>Reset</Button>
                 </ActionButtons>
             </NewPostForm>
-
-            {/* Social Feed */}
-            {/* TODO: move to a saparate component*/}
-            <SocialFeed>
-                {
-                    posts.map((post: Post, index: number) =>
-                        <PostCard key={index}>
-                            <UserInfo onMouseEnter={handleUserInfoHover} onMouseLeave={handleUserInfoHover}>
-                                <img src="profile-pic.png" alt="User" />
-                                <span>{post.username}</span>
-                                {showUserInfo && <Popup>
-                                    <label>{post.username}</label>
-                                    <label>{post.city ?? 'N/A'}</label>
-                                    <label>{post.name ?? 'N/A'}</label>
-                                    <PopupRunningRow><FaRunning /> {post.distance}Km <LuTimer /> {post.duration} <IoMdSpeedometer /> {calculateRunningPace(post.distance, post.duration)}</PopupRunningRow>
-                                </Popup>}
-                            </UserInfo>
-                            <p>{post.text}</p>
-                            <PostDate>
-                                <span><FaRunning /> {post.distance}Km </span>
-                                <span>{post.date.toLocaleString()}</span>
-                            </PostDate>
-                            <PostActions>
-                                <button>
-                                    <FaHeart /> {post.likes}
-                                </button>
-                                <button onClick={() => setShowComments(!showComments)}>
-                                    <FaComment />{post.comments?.length}  Comments
-                                </button>
-                            </PostActions>
-                            {showComments && <>
-                                {post?.comments?.map((comment, commentIndex) =>
-                                    <Comment key={commentIndex} username={comment.username} text={comment.text} date={comment.date} />
-                                )}
-
-                                {/* Add Comment Input */}
-                                <AddCommentArea>
-                                    <TextArea
-                                        value={commentInput[index] || ''}
-                                        placeholder="Add a comment..."
-                                        rows={4}
-                                        cols={40}
-                                        maxLength={POST_MAX_LENGTH}
-                                        minLength={POST_MIN_LENGTH}
-                                        onChange={(e) => handleCommentChange(index, e.target.value)}
-                                    />
-                                    <ActionButtons>
-                                        <Button className={addCommentDisabled(index) ? `disabled-post-btn` : `post-run-btn`} disabled={addCommentDisabled(index)} onClick={() => addNewComment(index)}>Post</Button>
-                                    </ActionButtons>
-                                </AddCommentArea>
-                            </>}
-                        </PostCard>
-                    )
-                }
-            </SocialFeed>
+            {posts && posts.length && user ? <SocialFeed posts={posts} user={user} /> : <h2>No Posts Yet!</h2>}
         </MainScreenWrapper>
     );
 };

@@ -1,36 +1,47 @@
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import useDashboardStore, { FavoriteCity } from "../../store/dashboardStore";
 import { getWeatherIcon } from "../../utils/utils";
 import { Section, SectionTitle, WeatherIcon } from "./Dashboard.styled";
-import { useCallback, useEffect } from "react";
 import { currentWeatherApiRequest } from "../../api/weather-api";
+import { useQuery } from "@tanstack/react-query";
 
 type FavoritesProps = {
     handleFavoriteCityClick: (city: FavoriteCity) => void;
 };
 
-export const Favorites = ({handleFavoriteCityClick}: FavoritesProps) => {
+type WeatherDataResult = {
+    cityId: number;
+    temperature: string;
+    weatherCode: number;
+}
+
+export const Favorites = ({ handleFavoriteCityClick }: FavoritesProps) => {
     const removeFavoriteCity = useDashboardStore((state) => state.removeCity);
     const updateWeather = useDashboardStore((state) => state.updateCityWeather);
     const favoriteCities = useDashboardStore((state) => state.favoriteCities);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const updateWeatherData = useCallback(updateWeather, []);
+    const { isPending, isFetching } = useQuery({
+        queryKey: ['favoritesWeatherData'],
+        queryFn: async () => {
+            const weatherDataResult: WeatherDataResult[] = [];
+            favoriteCities.forEach(async (city) => {
+                const response = await currentWeatherApiRequest(city.latitude, city.longitude);
+                if (response.success && response.data) {
+                    const parsedResponse = response.data[0];
+                    const current = parsedResponse.current()!;
+                    const temperature = current.variables(0)!.value().toFixed(0) ?? '0';
+                    const weatherCode = current.variables(5)!.value();
+                    updateWeather(city.id, temperature, weatherCode);
+                    const weatherDataElement = {
+                        cityId: city.id, temperature, weatherCode
+                    }
+                    weatherDataResult.push(weatherDataElement)
+                }
+            });
+            return weatherDataResult;
+        }
+    })
 
-    useEffect(() => {
-        favoriteCities.forEach(async (city) => {
-            const response = await currentWeatherApiRequest(city.latitude, city.longitude);
-            if (response.success && response.data) {
-                const parsedResponse = response.data[0];
-                const current = parsedResponse.current()!;
-                const temperature = current.variables(0)!.value().toFixed(0) ?? '0';
-                const weatherCode = current.variables(5)!.value();
-                updateWeatherData(city.id, temperature, weatherCode);
-            }
-        });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-    
     return (
         <>
             {favoriteCities.length > 0 && (
@@ -76,6 +87,11 @@ export const Favorites = ({handleFavoriteCityClick}: FavoritesProps) => {
                     </Box>
                 </Section>
             )}
+            {isFetching && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                    <CircularProgress />
+                    {isPending && <h3>Loading weather for the first time...</h3>}
+                </Box>)}
         </>
     )
 }
