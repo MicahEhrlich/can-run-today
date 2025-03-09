@@ -237,6 +237,10 @@ const AddCommentArea = styled.div`
   flex-direction: column;
 `;
 
+const CommentsSection = styled.div`
+  display: none;
+`;
+
 export {
   MainScreenWrapper,
   WeatherInfo,
@@ -261,5 +265,6 @@ export {
   CommentUsername,
   AddCommentArea,
   TextArea,
-  RunningStatsRow
+  RunningStatsRow,
+  CommentsSection
 };

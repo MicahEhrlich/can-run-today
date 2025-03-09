@@ -3,6 +3,7 @@ import { RegisterFields } from "../store/registerStore"
 import axiosInstance from "./axiosInstance";
 import { UserSettings } from "../store/settingsStore";
 import { ApiRequest, ApiResponse } from "./types-api";
+import { Post } from "../store/socialStore";
 
 
 const apiRequest = async ({method, url, data}: ApiRequest): Promise<ApiResponse> => {
@@ -70,3 +71,7 @@ export const updateUserDetails = async (userSettings: UserSettings): Promise<Api
     const updatedUserDetails = { ...userSettings, weekDaysRunning: Number(userSettings.weekDaysRunning?.toString().split(',').join('')) };
     return apiRequest({ method: 'PUT', url: '/update_user_details', data: { ...updatedUserDetails }});
 };
+
+export const addNewPost = async (post: Post): Promise<ApiResponse> => {
+    return apiRequest({ method: 'POST', url: '/add_new_post', data: {...post}})
+}

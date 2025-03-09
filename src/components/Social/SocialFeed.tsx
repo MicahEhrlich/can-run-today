@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Post, PostComment, useSocialStore } from "../../store/socialStore";
 import { Button } from "@mui/material";
 import { FaRunning } from "react-icons/fa";
@@ -6,7 +6,7 @@ import { FaHeart, FaComment } from "react-icons/fa6";
 import { IoMdSpeedometer } from "react-icons/io";
 import { LuTimer } from "react-icons/lu";
 import { calculateRunningPace } from "../../utils/utils";
-import { PostCard, UserInfo, Popup, PopupRunningRow, PostDate, PostActions, AddCommentArea, TextArea, ActionButtons, CommentDate, CommentStyling, CommentText, CommentUsername } from "./Social.styled";
+import { PostCard, UserInfo, Popup, PopupRunningRow, PostDate, PostActions, AddCommentArea, TextArea, ActionButtons, CommentDate, CommentStyling, CommentText, CommentUsername, CommentsSection } from "./Social.styled";
 import { User } from "../../store/authStore";
 
 type SocialFeedProps = {
@@ -37,7 +37,6 @@ export const SocialFeed = ({ posts, user }: SocialFeedProps) => {
     const addComment = useSocialStore((state) => state.addComment);
 
     const [showUserInfo, setShowUserInfo] = useState<boolean>(false);
-    const [showComments, setShowComments] = useState<boolean>(false);
     const [commentInput, setCommentInput] = useState<{ [key: number]: string }>({});
 
     const handleCommentChange = (postIndex: number, text: string) => {
@@ -63,9 +62,18 @@ export const SocialFeed = ({ posts, user }: SocialFeedProps) => {
         setCommentInput((prev) => ({ ...prev, [postIndex]: '' }));
     };
 
-    const handleUserInfoHover = () => {
-        setShowUserInfo(!showUserInfo)
+    const handleUserInfoHover = (value: boolean) => {
+        setShowUserInfo(value)
     }
+
+    const commentSectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+    const toggleComments = (index: number) => {
+        if (commentSectionRefs.current[index]) {
+            commentSectionRefs.current[index].style.display =
+            commentSectionRefs.current[index].style.display === "none" ? "block" : "none";
+        }
+    };
 
     return (
         <>
@@ -78,7 +86,7 @@ export const SocialFeed = ({ posts, user }: SocialFeedProps) => {
                             <label>{post.name ?? 'N/A'}</label>
                             <PopupRunningRow><FaRunning /> {post.distance}Km <LuTimer /> {post.duration} <IoMdSpeedometer /> {calculateRunningPace(post.distance, post.duration)}</PopupRunningRow>
                         </Popup>}
-                        <UserInfo onMouseEnter={handleUserInfoHover} onMouseLeave={handleUserInfoHover}>
+                        <UserInfo onMouseEnter={() => handleUserInfoHover(true)} onMouseLeave={() => handleUserInfoHover(false)}>
                             <img src="profile-pic.png" alt="User" />
                             <span>{post.username}</span>
                         </UserInfo>
@@ -91,11 +99,11 @@ export const SocialFeed = ({ posts, user }: SocialFeedProps) => {
                             <button>
                                 <FaHeart /> {post.likes}
                             </button>
-                            <button onClick={() => setShowComments(!showComments)}>
+                            <button onClick={() => toggleComments(index)}>
                                 <FaComment />{post.comments?.length}  Comments
                             </button>
                         </PostActions>
-                        {showComments && <>
+                        <CommentsSection ref={(element) => commentSectionRefs.current[index] = element}>
                             {post?.comments?.map((comment, commentIndex) =>
                                 <Comment key={commentIndex} username={comment.username} text={comment.text} date={comment.date} />
                             )}
@@ -114,7 +122,7 @@ export const SocialFeed = ({ posts, user }: SocialFeedProps) => {
                                     <Button className={addCommentDisabled(index) ? `disabled-post-btn` : `post-run-btn`} disabled={addCommentDisabled(index)} onClick={() => addNewComment(index)}>Post</Button>
                                 </ActionButtons>
                             </AddCommentArea>
-                        </>}
+                        </CommentsSection>
                     </PostCard>
                 )
             }
